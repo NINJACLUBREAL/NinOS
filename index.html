@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pulsar OS Boot</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/alpinejs/3.10.5/cdn.min.js" defer></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400&display=swap');
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #000;
+            color: #fff;
+        }
+        .progress-bar {
+            background: linear-gradient(90deg, #ffffff 0%, #ffffff 50%, transparent 50%, transparent 100%);
+            background-size: 200% 100%;
+            animation: loading 2s linear infinite;
+        }
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: 0 0; }
+        }
+    </style>
+</head>
+<body class="bg-black text-white h-screen flex flex-col items-center justify-center" 
+      x-data="bootScreen()" 
+      x-init="startBoot()"
+      @keydown.window="handleKeydown($event)">
+    <div class="text-center">
+        <img src="pulsar.gif" alt="Pulsar OS Logo" class="w-64 h-64 mb-8 rounded-full shadow-lg">
+        
+        <div class="w-64 h-1 bg-gray-800 mb-4 overflow-hidden">
+            <div class="progress-bar w-full h-full"></div>
+        </div>
+        
+        <p class="text-sm text-gray-300" x-text="statusText"></p>
+    </div>
+
+    <div class="fixed bottom-4 right-4 text-gray-500 text-xs">
+        <span x-show="!isMobile">
+            Press <kbd class="bg-gray-700 px-2 py-1 rounded">B</kbd> to enter BIOS
+        </span>
+        <span x-show="isMobile">
+            Tap anywhere to enter BIOS
+        </span>
+    </div>
+
+    <!-- Invisible overlay for mobile tap -->
+    <div class="fixed inset-0 bg-transparent z-50" x-show="isMobile" @click="enterBIOS()"></div>
+
+    <script>
+        function bootScreen() {
+            return {
+                statusText: 'Booting system...',
+                isMobile: window.innerWidth <= 768,
+                canEnterBIOS: true,
+                async startBoot() {
+                    await new Promise(resolve => setTimeout(resolve, 2500));
+                    if (this.canEnterBIOS) {
+                        this.statusText = 'Initializing system...';
+                        await new Promise(resolve => setTimeout(resolve, 3500));
+                        if (this.canEnterBIOS) {
+                            window.location.href = 'account.html';
+                        }
+                    }
+                },
+                async enterBIOS() {
+                    if (this.canEnterBIOS) {
+                        this.canEnterBIOS = false;
+                        this.statusText = 'Entering BIOS...';
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        window.location.href = 'bios.html';
+                    }
+                },
+                handleKeydown(event) {
+                    if (event.key.toLowerCase() === 'b') {
+                        this.enterBIOS();
+                    }
+                },
+                handleResize() {
+                    this.isMobile = window.innerWidth <= 768;
+                }
+            };
+        }
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('bootScreen', bootScreen);
+        });
+
+        window.addEventListener('resize', () => {
+            Alpine.store('bootScreen').handleResize();
+        });
+    </script>
+</body>
+</html>
